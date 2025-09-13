@@ -1,0 +1,2117 @@
+{
+  "name": "Vaccination Report 2",
+  "compatibilityLevel": 1550,
+  "model": {
+    "culture": "en-US",
+    "dataAccessOptions": {
+      "legacyRedirects": true,
+      "returnErrorValuesAsNull": true
+    },
+    "defaultPowerBIDataSourceVersion": "powerBI_V3",
+    "sourceQueryCulture": "en-IN",
+    "tables": [
+      {
+        "name": "coverage",
+        "lineageTag": "294afc87-20f0-4790-a3ec-0799811ad716",
+        "columns": [
+          {
+            "name": "CODE",
+            "dataType": "string",
+            "sourceColumn": "CODE",
+            "lineageTag": "bc61cd0e-ddc5-4475-a176-98479b5c4c30",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "YEAR",
+            "dataType": "int64",
+            "sourceColumn": "YEAR",
+            "formatString": "0",
+            "lineageTag": "ddbb402f-c792-42d0-8f7b-955df4ab99f6",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ANTIGEN",
+            "dataType": "string",
+            "sourceColumn": "ANTIGEN",
+            "lineageTag": "e580c4cd-00d4-4b6e-abcb-6dc703db86fb",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "COVERAGE_CATEGORY",
+            "dataType": "string",
+            "sourceColumn": "COVERAGE_CATEGORY",
+            "lineageTag": "e13e4ca4-6355-4f84-8d2d-ed1b2bbd2436",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "COVERAGE_CATEGORY_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "COVERAGE_CATEGORY_DESCRIPTION",
+            "lineageTag": "f688c6b4-838e-4fc1-8b5a-11a2f6592f0c",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TARGET_NUMBER",
+            "dataType": "double",
+            "sourceColumn": "TARGET_NUMBER",
+            "formatString": "0",
+            "lineageTag": "89a30c0c-486d-45f7-ba5b-c3569a20aa4e",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DOSES",
+            "dataType": "double",
+            "sourceColumn": "DOSES",
+            "formatString": "0",
+            "lineageTag": "2e3b3f8c-9016-4aa9-843c-d74cb542cf43",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "COVERAGE",
+            "dataType": "double",
+            "sourceColumn": "COVERAGE",
+            "formatString": "0.00",
+            "lineageTag": "2107741b-89cf-4b1b-bdb1-27f9bf551407",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "type": "calculated",
+            "name": "Coverage removed outliers",
+            "dataType": "double",
+            "isDataTypeInferred": true,
+            "expression": [
+              "",
+              "",
+              "VAR Q1 = PERCENTILEX.INC(",
+              "    FILTER('coverage', NOT(ISBLANK('coverage'[COVERAGE]))),",
+              "    'coverage'[COVERAGE],",
+              "    0.25",
+              ")",
+              "VAR Q3 = PERCENTILEX.INC(",
+              "    FILTER('coverage', NOT(ISBLANK('coverage'[COVERAGE]))),",
+              "    'coverage'[COVERAGE],",
+              "    0.75",
+              ")",
+              "VAR IQR = Q3 - Q1",
+              "VAR Lower = Q1 - (1.5 * IQR)",
+              "VAR Upper = Q3 + (1.5 * IQR)",
+              "RETURN",
+              "IF(",
+              "    ISBLANK('coverage'[COVERAGE]) || ",
+              "    'coverage'[COVERAGE] < Lower || ",
+              "    'coverage'[COVERAGE] > Upper,",
+              "    0,",
+              "    'coverage'[COVERAGE]",
+              ")",
+              ""
+            ],
+            "lineageTag": "9e38edcc-0cec-4540-8a9b-997c807a779d",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "coverage",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_coverage = Source{[Schema=\"dbo\",Item=\"coverage\"]}[Data],",
+                "    #\"Removed Columns\" = Table.RemoveColumns(dbo_coverage,{\"NAME\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Columns\"),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Removed Duplicates\", \"Coverage Cleaned\", each let",
+                "    // Check Rule 1: Does the existing COVERAGE value already have a decimal?",
+                "    // If a number is not equal to itself when rounded down, it has a decimal.",
+                "    HasDecimal = if [COVERAGE] <> null and [COVERAGE] <> Number.RoundDown([COVERAGE]) then true else false,",
+                "",
+                "    // Check Rule 2: Can we calculate the value from DOSES and TARGET_NUMBER?",
+                "    // Ensure both are present and TARGET_NUMBER is not zero to prevent errors.",
+                "    CanCalculate = [DOSES] <> null and [TARGET_NUMBER] <> null and [TARGET_NUMBER] <> 0,",
+                "",
+                "    // Apply the logic based on the hierarchy of rules",
+                "    Result =",
+                "        if HasDecimal then",
+                "            // If it already has a decimal, do not change it.",
+                "            [COVERAGE]",
+                "",
+                "        else if CanCalculate then",
+                "            // If we can calculate it, this is the most reliable source.",
+                "            // We multiply by 100 to get the percentage value.",
+                "            ([DOSES] / [TARGET_NUMBER]) * 100",
+                "",
+                "        else if [COVERAGE] <> null then",
+                "            // If the above conditions are false, apply the formatting rules to the existing COVERAGE value.",
+                "            let",
+                "                CoverageAsText = Number.ToText([COVERAGE]),",
+                "                TextLength = Text.Length(CoverageAsText)",
+                "            in",
+                "                if TextLength <= 2 then",
+                "                    // Rule: 1 or 2 digits, keep as is (e.g., 95 remains 95)",
+                "                    [COVERAGE]",
+                "                else if TextLength = 3 then",
+                "                    // Rule: 3 digits, add decimal before the last digit (e.g., 214 -> 21.4)",
+                "                    [COVERAGE] / 10",
+                "                else if TextLength = 4 then",
+                "                    // Rule: 4 digits, check the first digit",
+                "                    if Text.Start(CoverageAsText, 1) = \"1\" then",
+                "                        // Starts with 1 (e.g., 1480 -> 148.0)",
+                "                        [COVERAGE] / 10",
+                "                    else",
+                "                        // Starts with 2 or more (e.g., 3850 -> 38.50)",
+                "                        [COVERAGE] / 100",
+                "                else // 5 or more digits",
+                "                     // Rule: Add decimal before the last two digits (e.g., 36000 -> 360.00)",
+                "                    [COVERAGE] / 100",
+                "        else",
+                "            // If all other conditions fail (e.g., COVERAGE is null and cannot be calculated), return null.",
+                "            null",
+                "in",
+                "    Result),",
+                "    #\"Removed Columns1\" = Table.RemoveColumns(#\"Added Custom\",{\"COVERAGE\"}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Removed Columns1\",{{\"Coverage Cleaned\", \"COVERAGE\"}}),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Renamed Columns\",{{\"COVERAGE\", type number}}),",
+                "    #\"Calculated Absolute Value\" = Table.TransformColumns(#\"Changed Type\",{{\"COVERAGE\", Number.Abs, type number}, {\"TARGET_NUMBER\", Number.Abs, Int64.Type}, {\"DOSES\", Number.Abs, Int64.Type}}),",
+                "    #\"Removed Columns2\" = Table.RemoveColumns(#\"Calculated Absolute Value\",{\"ANTIGEN_DESCRIPTION\"}),",
+                "    #\"Replaced Value\" = Table.ReplaceValue(#\"Removed Columns2\",null,0,Replacer.ReplaceValue,{\"TARGET_NUMBER\"}),",
+                "    #\"Replaced Value1\" = Table.ReplaceValue(#\"Replaced Value\",null,0,Replacer.ReplaceValue,{\"DOSES\"})",
+                "in",
+                "    #\"Replaced Value1\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "incidence_rate",
+        "lineageTag": "c6b57eac-f56f-4195-9e5a-0f47727207a1",
+        "columns": [
+          {
+            "name": "GROUP",
+            "dataType": "string",
+            "sourceColumn": "GROUP",
+            "lineageTag": "d6cd6af1-ee92-40bd-b9cb-fc078e23ab63",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "CODE",
+            "dataType": "string",
+            "sourceColumn": "CODE",
+            "lineageTag": "52bfb2bc-bf09-4f58-acf5-76b63bcab41b",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "YEAR",
+            "dataType": "int64",
+            "sourceColumn": "YEAR",
+            "formatString": "0",
+            "lineageTag": "ddde6141-97f7-4b01-bec7-c56a7d425518",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DISEASE",
+            "dataType": "string",
+            "sourceColumn": "DISEASE",
+            "lineageTag": "d2296211-484b-4129-8b68-b16d952df4af",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DISEASE_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "DISEASE_DESCRIPTION",
+            "lineageTag": "80d1766e-9fb9-4219-8c5f-1c9f70efee18",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "INCIDENCE_RATE",
+            "dataType": "double",
+            "sourceColumn": "INCIDENCE_RATE",
+            "lineageTag": "6c7cae1a-4ea0-444b-b8ae-3b1e9d5d4525",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              },
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "DENOMINATOR",
+            "dataType": "string",
+            "sourceColumn": "DENOMINATOR",
+            "lineageTag": "a6fbff4f-f63f-4b5c-a3bf-6bb92621e6c1",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Denominator Kind",
+            "dataType": "string",
+            "sourceColumn": "Denominator Kind",
+            "lineageTag": "ab807cde-18c1-4a77-a1bf-784d01e3043d",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "incidence_rate",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_incidence_rate = Source{[Schema=\"dbo\",Item=\"incidence_rate\"]}[Data],",
+                "    #\"Removed Columns\" = Table.RemoveColumns(dbo_incidence_rate,{\"NAME\"}),",
+                "    #\"Added Custom Column\" = Table.AddColumn(#\"Removed Columns\", \"Custom\", each let splitDENOMINATOR = Splitter.SplitTextByDelimiter(\" \", QuoteStyle.None)([DENOMINATOR]), splitsplitDENOMINATOR1 = Splitter.SplitTextByDelimiter(\",\", QuoteStyle.None)(splitDENOMINATOR{1}?) in Text.Combine(splitsplitDENOMINATOR1), type text),",
+                "    #\"Inserted Text After Delimiter\" = Table.AddColumn(#\"Added Custom Column\", \"Text After Delimiter\", each Text.AfterDelimiter([DENOMINATOR], \" \", 1), type text),",
+                "    #\"Removed Columns1\" = Table.RemoveColumns(#\"Inserted Text After Delimiter\",{\"DENOMINATOR\"}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Removed Columns1\",{{\"Custom\", \"DENOMINATOR\"}, {\"Text After Delimiter\", \"Denominator Kind\"}}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Renamed Columns\")",
+                "in",
+                "    #\"Removed Duplicates\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "other_indicators",
+        "lineageTag": "95cf22fb-8f79-4d06-95b9-66a41bab9bc2",
+        "columns": [
+          {
+            "name": "ISO_3_CODE",
+            "dataType": "string",
+            "sourceColumn": "ISO_3_CODE",
+            "lineageTag": "c5a65d94-59e6-4d00-b7e5-abc1ec762722",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "YEAR",
+            "dataType": "int64",
+            "sourceColumn": "YEAR",
+            "formatString": "0",
+            "lineageTag": "7f9d503b-c190-42d5-93eb-caf42b53801b",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "INDCODE",
+            "dataType": "string",
+            "sourceColumn": "INDCODE",
+            "lineageTag": "35e5ccce-21a2-4344-95ba-80470e85a61e",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "DESCRIPTION",
+            "lineageTag": "cfd5e8bd-4e8a-427d-85dd-afce17e50ab1",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "INDCAT_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "INDCAT_DESCRIPTION",
+            "lineageTag": "2cd6edf4-8459-4a3a-aa09-b4585660a333",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "INDSORT",
+            "dataType": "int64",
+            "sourceColumn": "INDSORT",
+            "formatString": "0",
+            "lineageTag": "e0402160-7434-4545-a9c5-3c8bbeb14516",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "VALUE",
+            "dataType": "string",
+            "sourceColumn": "VALUE",
+            "lineageTag": "40eb0612-a2de-4f65-bd64-bdb5b1073c27",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "other_indicators",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_other_indicators = Source{[Schema=\"dbo\",Item=\"other_indicators\"]}[Data],",
+                "    #\"Removed Columns\" = Table.RemoveColumns(dbo_other_indicators,{\"COUNTRYNAME\", \"WHO_Region\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Columns\")",
+                "in",
+                "    #\"Removed Duplicates\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "reported_cases",
+        "lineageTag": "86649931-5d60-43ca-9107-c5e8ad28272f",
+        "columns": [
+          {
+            "name": "GROUP",
+            "dataType": "string",
+            "sourceColumn": "GROUP",
+            "lineageTag": "41d300fa-5a61-4d57-9ae6-92c7a0efbcb0",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "CODE",
+            "dataType": "string",
+            "sourceColumn": "CODE",
+            "lineageTag": "82d9831c-5dd0-4cb4-824c-3bc933895737",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "YEAR",
+            "dataType": "int64",
+            "sourceColumn": "YEAR",
+            "formatString": "0",
+            "lineageTag": "0598312a-a77c-4d95-96ba-d487384c971d",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DISEASE",
+            "dataType": "string",
+            "sourceColumn": "DISEASE",
+            "lineageTag": "cc70a991-171b-4eb2-9049-adad9a35dff0",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DISEASE_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "DISEASE_DESCRIPTION",
+            "lineageTag": "5cf29d45-5c4a-4cf2-812f-086d3c93e953",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "CASES",
+            "dataType": "int64",
+            "sourceColumn": "CASES",
+            "formatString": "0",
+            "lineageTag": "4e47250b-3491-4c2f-adaa-f0b73f97224e",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "reported_cases",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_reported_cases = Source{[Schema=\"dbo\",Item=\"reported_cases\"]}[Data],",
+                "    #\"Removed Columns\" = Table.RemoveColumns(dbo_reported_cases,{\"NAME\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Columns\")",
+                "in",
+                "    #\"Removed Duplicates\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "vaccine_introduction",
+        "lineageTag": "ec3c70f1-7930-4afe-adfc-e9257fe69d5b",
+        "columns": [
+          {
+            "name": "ISO_3_CODE",
+            "dataType": "string",
+            "sourceColumn": "ISO_3_CODE",
+            "lineageTag": "edc49ff3-26fb-4cf3-8ece-cb4af240dba5",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "YEAR",
+            "dataType": "int64",
+            "sourceColumn": "YEAR",
+            "formatString": "0",
+            "lineageTag": "b1ca78ed-671d-4190-a71f-3b767cc9bbdf",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "DESCRIPTION",
+            "lineageTag": "0b9ff3e1-f681-4ef7-82b9-f8de8f05f047",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "INTRO",
+            "dataType": "string",
+            "sourceColumn": "INTRO",
+            "lineageTag": "f06a4825-48ea-4140-b880-0b70f4451a16",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "vaccine_introduction",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_vaccine_introduction = Source{[Schema=\"dbo\",Item=\"vaccine_introduction\"]}[Data],",
+                "    #\"Removed Columns\" = Table.RemoveColumns(dbo_vaccine_introduction,{\"COUNTRYNAME\", \"WHO_Region\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Columns\")",
+                "in",
+                "    #\"Removed Duplicates\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "vaccine_schedule",
+        "lineageTag": "d9ae32d6-b425-42af-b965-d22488756d88",
+        "columns": [
+          {
+            "name": "ISO_3_CODE",
+            "dataType": "string",
+            "sourceColumn": "ISO_3_CODE",
+            "lineageTag": "edb43243-202f-4368-a86d-30f3e7811a0a",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "YEAR",
+            "dataType": "int64",
+            "sourceColumn": "YEAR",
+            "formatString": "0",
+            "lineageTag": "f33a2f10-9376-4c68-8ef7-a7ad43d7766a",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "VACCINECODE",
+            "dataType": "string",
+            "sourceColumn": "VACCINECODE",
+            "lineageTag": "24353b18-afe6-4cd7-b641-451d641c2be6",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "VACCINE_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "VACCINE_DESCRIPTION",
+            "lineageTag": "399e86e7-4987-4eda-86e6-66176e718720",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SCHEDULEROUNDS",
+            "dataType": "int64",
+            "sourceColumn": "SCHEDULEROUNDS",
+            "formatString": "0",
+            "lineageTag": "b6d0f3f6-28c9-489c-9d64-b78ae768410b",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TARGETPOP",
+            "dataType": "string",
+            "sourceColumn": "TARGETPOP",
+            "lineageTag": "cfa54137-e22c-4324-b701-0a75fb5531be",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TARGETPOP_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "TARGETPOP_DESCRIPTION",
+            "lineageTag": "82279c46-a97f-43bc-b895-d9caf6b277f7",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "GEOAREA",
+            "dataType": "string",
+            "sourceColumn": "GEOAREA",
+            "lineageTag": "dc0305cc-a224-466f-89f0-afc934f6f172",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "AGEADMINISTERED",
+            "dataType": "string",
+            "sourceColumn": "AGEADMINISTERED",
+            "lineageTag": "4c87bbe5-433b-40bb-a831-9dc82e7be4ae",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "SOURCECOMMENT",
+            "dataType": "string",
+            "sourceColumn": "SOURCECOMMENT",
+            "lineageTag": "533b9571-9a8a-4b7b-82d0-123ddc9c4d14",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "vaccine_schedule",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_vaccine_schedule = Source{[Schema=\"dbo\",Item=\"vaccine_schedule\"]}[Data],",
+                "    #\"Removed Columns\" = Table.RemoveColumns(dbo_vaccine_schedule,{\"COUNTRYNAME\", \"WHO_Region\"}),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Removed Columns\")",
+                "in",
+                "    #\"Removed Duplicates\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "who_regions",
+        "lineageTag": "66c3b4c5-94a2-46d4-bedc-9a81191a0810",
+        "columns": [
+          {
+            "name": "ISO_Codes",
+            "dataType": "string",
+            "sourceColumn": "ISO_Codes",
+            "lineageTag": "2ae704ab-e678-437c-8ea5-3354bd1e2083",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Country",
+            "dataType": "string",
+            "sourceColumn": "Country",
+            "lineageTag": "850730f7-7ad3-462e-a19a-49e6482bbb86",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Region_Number",
+            "dataType": "int64",
+            "sourceColumn": "Region_Number",
+            "formatString": "0",
+            "lineageTag": "b601da60-0711-457a-882a-fd1f944d7712",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Region_Catrgory",
+            "dataType": "string",
+            "sourceColumn": "Region_Catrgory",
+            "lineageTag": "aeb92a80-36f7-46bc-a3cc-4a3e6a4674d1",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "all_region",
+            "dataType": "string",
+            "sourceColumn": "all_region",
+            "lineageTag": "e3d69032-f41f-4317-95da-bce50b2dee4c",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "all_sub_region",
+            "dataType": "string",
+            "sourceColumn": "all_sub_region",
+            "lineageTag": "d981cc6e-d726-4483-8b21-1e15aa653cc5",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "all_intermediate_region",
+            "dataType": "string",
+            "sourceColumn": "all_intermediate_region",
+            "lineageTag": "63e519f3-b4bc-4c24-a06e-a132374eb924",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "WHO_Regions",
+            "dataType": "string",
+            "sourceColumn": "WHO_Regions",
+            "lineageTag": "0ceb406a-ab26-46f2-8b1c-9391944bb247",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "who_regions",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Sql.Database(\"vv2iwx4oxwaebpogsiees6rd6q-3y5wf3jqtzmelnjb6zdd2nks2i.datawarehouse.fabric.microsoft.com\", \"Vaccination_Lakehouse\"),",
+                "    dbo_who_regions = Source{[Schema=\"dbo\",Item=\"who_regions\"]}[Data],",
+                "    #\"Removed Duplicates\" = Table.Distinct(dbo_who_regions)",
+                "in",
+                "    #\"Removed Duplicates\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          },
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          }
+        ]
+      },
+      {
+        "name": "Year",
+        "lineageTag": "bc9f20bb-1451-42a0-84d3-ac3795805a97",
+        "columns": [
+          {
+            "type": "calculatedTableColumn",
+            "name": "Years",
+            "dataType": "int64",
+            "isNameInferred": false,
+            "isDataTypeInferred": true,
+            "sourceColumn": "[Value]",
+            "formatString": "0",
+            "lineageTag": "47b68dcf-f227-4184-a78f-8d41053ee04e",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Year",
+            "mode": "import",
+            "source": {
+              "type": "calculated",
+              "expression": [
+                "",
+                "VAR MinYear =",
+                "    MINX(",
+                "        {",
+                "            SELECTCOLUMNS({ MIN('coverage'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MIN('incidence_rate'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MIN('reported_cases'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MIN('vaccine_introduction'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MIN('vaccine_schedule'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MIN('other_indicators'[YEAR]) }, \"Value\", [Value])",
+                "        },",
+                "        [Value]",
+                "    )",
+                "VAR MaxYear =",
+                "    MAXX(",
+                "        {",
+                "            SELECTCOLUMNS({ MAX('coverage'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MAX('incidence_rate'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MAX('reported_cases'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MAX('vaccine_introduction'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MAX('vaccine_schedule'[YEAR]) }, \"Value\", [Value]),",
+                "            SELECTCOLUMNS({ MAX('other_indicators'[YEAR]) }, \"Value\", [Value])",
+                "        },",
+                "        [Value]",
+                "    )",
+                "RETURN",
+                "    GENERATESERIES(MinYear, MaxYear, 1)"
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_Id",
+            "value": "4d12cf4ad48a446d96d65030af5c528e"
+          }
+        ]
+      },
+      {
+        "name": "Key Measures",
+        "lineageTag": "85b212ed-446e-4397-9be9-9113dd77e62d",
+        "partitions": [
+          {
+            "name": "Key Measures",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText(\"i44FAA==\", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Source,{{\"Column1\", type text}}),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Changed Type\",{\"Column1\"})",
+                "in",
+                "    #\"Removed Columns\""
+              ]
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Weighted Global Coverage %",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "    DIVIDE(",
+              "        SUMX(",
+              "            coverage,",
+              "            coverage[Coverage removed outliers] * coverage[TARGET_NUMBER]",
+              "        ),",
+              "        SUM(coverage[TARGET_NUMBER]),",
+              "        0",
+              "    ),",
+              "    FILTER(",
+              "        coverage,",
+              "        NOT(ISBLANK(coverage[Coverage removed outliers]))",
+              "    )",
+              ")",
+              ""
+            ],
+            "lineageTag": "1e5cfe3e-af49-4fc3-ab17-7b1ae2d702b8",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "Total Reported Cases",
+            "expression": [
+              "CALCULATE(SUM(reported_cases[CASES]), ALLCROSSFILTERED(coverage),",
+              "",
+              "    TREATAS(VALUES('Year'[Years]), coverage[YEAR]),",
+              "    TREATAS(VALUES(who_regions[ISO_Codes]), coverage[CODE]),",
+              "    TREATAS(VALUES('Year'[Years]), incidence_rate[YEAR]),",
+              "    TREATAS(VALUES(who_regions[ISO_Codes]), incidence_rate[CODE]),",
+              "    TREATAS(VALUES('Year'[Years]), other_indicators[YEAR]),",
+              "    TREATAS(VALUES(who_regions[ISO_Codes]), other_indicators[ISO_3_CODE]),",
+              "    TREATAS(VALUES('Year'[Years]), reported_cases[YEAR]),",
+              "    TREATAS(VALUES(who_regions[ISO_Codes]), reported_cases[CODE]),",
+              "    TREATAS(VALUES('Year'[Years]), vaccine_introduction[YEAR]),",
+              "    TREATAS(VALUES(who_regions[ISO_Codes]), vaccine_introduction[ISO_3_CODE]),",
+              "    TREATAS(VALUES('Year'[Years]), vaccine_schedule[YEAR]),",
+              "    TREATAS(VALUES(who_regions[ISO_Codes]), vaccine_schedule[ISO_3_CODE]))"
+            ],
+            "formatString": "0",
+            "lineageTag": "4ecb9c31-7126-46b0-9e01-d0c797a9f069"
+          },
+          {
+            "name": "Average Incidence",
+            "expression": [
+              "",
+              "// CALCULATE(AVERAGE(incidence_rate[INCIDENCE_RATE]) * SELECTEDVALUE(incidence_rate[DENOMINATOR]), incidence_rate[Denominator Kind] == SELECTEDVALUE(incidence_rate[Denominator Kind]))",
+              "// Average Incidence =",
+              "CALCULATE(",
+              "    AVERAGE(incidence_rate[INCIDENCE_RATE]) * SELECTEDVALUE(incidence_rate[DENOMINATOR]),",
+              "    FILTER(",
+              "        incidence_rate,",
+              "        incidence_rate[Denominator Kind] = SELECTEDVALUE(incidence_rate[Denominator Kind])",
+              "    )",
+              ")",
+              ""
+            ],
+            "lineageTag": "b6247bb8-6cc7-4142-8252-c8af014f42f9",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "Vaccines Introduced Count",
+            "expression": [
+              "",
+              "CALCULATE(COUNT(vaccine_introduction[DESCRIPTION]),",
+              "",
+              "FILTER(",
+              "        'vaccine_introduction',",
+              "        SEARCH(\"Yes\", 'vaccine_introduction'[INTRO], 1, 0) > 0",
+              "    )",
+              ")"
+            ],
+            "formatString": "0",
+            "lineageTag": "68a3ae88-b6ea-4d13-a0ee-be865e09424a"
+          },
+          {
+            "name": "% Countries Meeting Antigen Target 95%",
+            "expression": [
+              "",
+              "VAR SelectedAntigen = SELECTEDVALUE(coverage[ANTIGEN])",
+              "VAR CountriesMeetingTarget =",
+              "    CALCULATE(",
+              "        DISTINCTCOUNT(coverage[CODE]),",
+              "        coverage[ANTIGEN] = SelectedAntigen,",
+              "        coverage[Coverage removed outliers] >= 95",
+              "    )",
+              "VAR TotalCountriesWithAntigen =",
+              "    CALCULATE(",
+              "        DISTINCTCOUNT(coverage[CODE]),",
+              "        coverage[ANTIGEN] = SelectedAntigen",
+              "    )",
+              "RETURN",
+              "    IF(ISBLANK(DIVIDE(CountriesMeetingTarget, TotalCountriesWithAntigen, 0)),",
+              "    \"Select Antigen\", DIVIDE(CountriesMeetingTarget, TotalCountriesWithAntigen, 0))",
+              ""
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "4ec6cbbf-1f72-41a5-adea-c2f22a069b1a"
+          },
+          {
+            "name": "Dose Drop-off %",
+            "expression": [
+              "",
+              "VAR SelectedFamily = SELECTEDVALUE(structured_antigen_data[ANTIGEN_FAMILY])",
+              "",
+              "// --- Calculate total doses for first dose antigens ---",
+              "VAR TotalFirstDoses =",
+              "    CALCULATE(",
+              "        SUM(coverage[DOSES]),",
+              "        FILTER(",
+              "            coverage,",
+              "            SelectedFamily = \"diphtheria\" && coverage[ANTIGEN] IN {\"DTPCV1\"}",
+              "            || SelectedFamily = \"Hepatitis B\" && coverage[ANTIGEN] IN {\"HEPB_BDALL\", \"HEPB_BD\"}",
+              "            || SelectedFamily = \"HPV\" && coverage[ANTIGEN] IN {\"PRHPV1_M\", \"15HPV1_M\", \"HPV_FEM1\", \"15HPV1_F\", \"PRHPV1_F\", \"HPV_MALE1\"}",
+              "            || SelectedFamily = \"Japanese encephalitis\" && coverage[ANTIGEN] IN {\"JAPENC\", \"JAPENC_1\"}",
+              "            || SelectedFamily = \"Malaria\" && coverage[ANTIGEN] IN {\"MALARIA1\"}",
+              "            || SelectedFamily = \"measles\" && coverage[ANTIGEN] IN {\"MCV1\"}",
+              "            || SelectedFamily = \"Meningococcal\" && coverage[ANTIGEN] IN {\"MEN_A_CONJ\", \"MEN_B\", \"MEN_ACYW_CONJ\"}",
+              "            || SelectedFamily = \"pertussis\" && coverage[ANTIGEN] IN {\"PERCV_PW\"}",
+              "            || SelectedFamily = \"Pneumococcal (PCV)\" && coverage[ANTIGEN] IN {\"PCV1\"}",
+              "            || SelectedFamily = \"polio\" && coverage[ANTIGEN] IN {\"IPV1\", \"IPV1_FRAC\"}",
+              "            || SelectedFamily = \"Rotavirus\" && coverage[ANTIGEN] IN {\"ROTA1\"}",
+              "            || SelectedFamily = \"tetanus\" && coverage[ANTIGEN] IN {\"PAB\", \"TT2PLUS\"}",
+              "        )",
+              "    )",
+              "",
+              "// --- Calculate total doses for final dose antigens ---",
+              "VAR TotalFinalDoses =",
+              "    CALCULATE(",
+              "        SUM(coverage[DOSES]),",
+              "        FILTER(",
+              "            coverage,",
+              "            SelectedFamily = \"diphtheria\" && coverage[ANTIGEN] IN {\"DIPHCV6\"}",
+              "            || SelectedFamily = \"Hepatitis B\" && coverage[ANTIGEN] IN {\"HEPB3\"}",
+              "            || SelectedFamily = \"HPV\" && coverage[ANTIGEN] IN {\"HPV_FEM\", \"15HPVC_M\", \"PRHPVC_M\", \"15HPVC_F\", \"PRHPVC_F\", \"HPV_MALE\"}",
+              "            || SelectedFamily = \"Japanese encephalitis\" && coverage[ANTIGEN] IN {\"JAPENC_C\"}",
+              "            || SelectedFamily = \"Malaria\" && coverage[ANTIGEN] IN {\"MALARIA4\"}",
+              "            || SelectedFamily = \"measles\" && coverage[ANTIGEN] IN {\"MCV2\"}",
+              "            || SelectedFamily = \"Meningococcal\" && coverage[ANTIGEN] IN {\"MENA_C\", \"MENACYW_C\", \"MENB_C\"}",
+              "            || SelectedFamily = \"pertussis\" && coverage[ANTIGEN] IN {\"PERCV4\"}",
+              "            || SelectedFamily = \"Pneumococcal (PCV)\" && coverage[ANTIGEN] IN {\"PCV3\"}",
+              "            || SelectedFamily = \"polio\" && coverage[ANTIGEN] IN {\"POL3\", \"IPV3_FRAC\"}",
+              "            || SelectedFamily = \"Rotavirus\" && coverage[ANTIGEN] IN {\"ROTAC\"}",
+              "            || SelectedFamily = \"tetanus\" && coverage[ANTIGEN] IN {\"TTCV6\"}",
+              "        )",
+              "    )",
+              "",
+              "// --- Calculate the percentage drop-off ---",
+              "VAR DropOff = DIVIDE(TotalFirstDoses - TotalFinalDoses, TotalFirstDoses,0)",
+              "",
+              "RETURN",
+              "    IF(",
+              "        NOT ISBLANK(SelectedFamily),",
+              "        DropOff,",
+              "        // \"Select Antigen Family\"",
+              "        BLANK()",
+              "        ",
+              "    )",
+              ""
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "1220c3bf-cb61-402b-b115-c0626117e832"
+          },
+          {
+            "name": "Booster Uptake %",
+            "expression": [
+              "",
+              "",
+              "",
+              "VAR SelectedFamily = SELECTEDVALUE(structured_antigen_data[ANTIGEN_FAMILY])",
+              "",
+              "VAR Uptake =",
+              "    CALCULATE(   // --- Calculate weighted average coverage for the booster dose ---",
+              "        DIVIDE(SUM(coverage[DOSES]), SUM(coverage[TARGET_NUMBER])),",
+              "        FILTER(",
+              "            coverage,",
+              "            SelectedFamily = \"diphtheria\" && coverage[ANTIGEN] IN {\"DIPHCV4\", \"DIPHCV5\", \"DIPHCV6\"}",
+              "            || SelectedFamily = \"tetanus\" && coverage[ANTIGEN] IN {\"TTCV4\", \"TTCV5\", \"TTCV6\"}",
+              "            || SelectedFamily = \"pertussis\" && coverage[ANTIGEN] IN {\"PERCV4\"}",
+              "        )",
+              "    )",
+              "",
+              "RETURN",
+              "    IF(NOT ISBLANK(SelectedFamily), Uptake, \"Select Antigen Family\")",
+              ""
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "197d95c8-d139-415d-a629-6820660b4057"
+          },
+          {
+            "name": "Booster Uptake YoY Δ",
+            "expression": [
+              "",
+              "VAR SelectedFamily = SELECTEDVALUE(structured_antigen_data[ANTIGEN_FAMILY])",
+              "VAR CurrentYear = MAX('Year'[Years])",
+              "VAR PreviousYear1 = CurrentYear - 1",
+              "",
+              "VAR CurrentYearUptake =",
+              "    CALCULATE(",
+              "        [Booster Uptake %],",
+              "        'Year'[Years] = CurrentYear",
+              "    )",
+              "",
+              "VAR PreviousYearUptake =",
+              "    CALCULATE(",
+              "        [Booster Uptake %],",
+              "        'Year'[Years] = PreviousYear1",
+              "    )",
+              "",
+              "RETURN",
+              "    IF(",
+              "        ISBLANK(SelectedFamily),",
+              "        BLANK(),",
+              "        IF(",
+              "            ISBLANK(CurrentYearUptake) || ISBLANK(PreviousYearUptake),",
+              "            BLANK(),",
+              "            CurrentYearUptake - PreviousYearUptake",
+              "        )",
+              "    )",
+              ""
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "3066b3a5-6dcf-4fd8-a2e7-ff8489506c6d"
+          },
+          {
+            "name": "Countries not Covered",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "    COUNT(who_regions[ISO_Codes]),",
+              "    ISBLANK(coverage[COVERAGE]))"
+            ],
+            "formatString": "0",
+            "lineageTag": "02167fc4-533a-4e50-941d-bcf768b7b860"
+          },
+          {
+            "name": "Incidence Reduction % (5yr)",
+            "expression": [
+              "",
+              "VAR CurrentPeriodIncidence = ",
+              "    CALCULATE([Average Incidence by Disease],",
+              "            FILTER('Year', 'Year'[Years] == MAX('Year'[Years])))",
+              "// Calculate the incidence for the same period but 5 years ago",
+              "VAR PriorPeriodIncidence =",
+              "    CALCULATE(",
+              "        [Average Incidence by Disease],",
+              "        FILTER('Year', 'Year'[Years] == MAX('Year'[Years]) - 5 )",
+              "    )",
+              "// Calculate the percentage reduction",
+              "VAR Reduction =",
+              "    DIVIDE(",
+              "        (PriorPeriodIncidence - CurrentPeriodIncidence),",
+              "        PriorPeriodIncidence",
+              "    )",
+              "RETURN Reduction"
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "4700fbe8-38c2-4a18-a232-dbe1bc324674"
+          },
+          {
+            "name": "Average Incidence by Disease",
+            "expression": [
+              "",
+              "VAR _DenominatorKind = SELECTEDVALUE(incidence_rate[Denominator Kind])",
+              "VAR _Denominator = SELECTEDVALUE(incidence_rate[DENOMINATOR])",
+              "VAR _Disease = SELECTEDVALUE('Disease Antigen Mappings'[Disease])",
+              "",
+              "RETURN",
+              "CALCULATE(",
+              "    AVERAGE(incidence_rate[INCIDENCE_RATE]) * _Denominator,",
+              "    FILTER(",
+              "        incidence_rate,",
+              "        incidence_rate[Denominator Kind] = _DenominatorKind &&",
+              "        incidence_rate[DISEASE] = _Disease",
+              "    )",
+              ")",
+              ""
+            ],
+            "formatString": "0",
+            "lineageTag": "7574669d-495a-4e78-a91a-52454bb5ebc8"
+          },
+          {
+            "name": "# Outlier Countries",
+            "expression": [
+              "",
+              "// Define the thresholds",
+              "VAR CoverageThreshold = 0.90 // 90% coverage",
+              "// Calculate the top quartile (75th percentile) of incidence across all countries for the selection",
+              "VAR All_Countries =",
+              "    CALCULATETABLE(",
+              "        VALUES(who_regions[Country]),",
+              "        ALL(who_regions[Country]) // Calculate across all countries regardless of table filters",
+              "    )",
+              "VAR IncidenceTopQuartile = ",
+              "        PERCENTILEX.INC(",
+              "            ADDCOLUMNS(",
+              "                All_Countries,",
+              "                \"Incidence\", [Average Incidence by Disease]",
+              "            ),",
+              "            [Incidence],",
+              "            0.75 // 75th percentile",
+              "        )",
+              "",
+              "// Count the countries that meet both criteria",
+              "VAR OutlierCount =",
+              "    COUNTROWS(",
+              "        FILTER(",
+              "            VALUES(who_regions[Country]),",
+              "            AND(",
+              "                [Average Incidence by Disease] >= IncidenceTopQuartile,",
+              "                [Weighted Global Coverage %] > CoverageThreshold",
+              "            )",
+              "        )",
+              "    )",
+              "RETURN OutlierCount"
+            ],
+            "formatString": "0",
+            "lineageTag": "3a7404d7-f328-488c-bca6-a3ffe1925c49"
+          },
+          {
+            "name": "Is Outlier Flag",
+            "expression": "IF([# Outlier Countries] > 0, 1, 0)",
+            "formatString": "0",
+            "lineageTag": "b10651b2-8faf-4a70-9258-9242e21c98df"
+          },
+          {
+            "name": "Introduction Year",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "    MIN(vaccine_introduction[YEAR]),",
+              "    // ALLSELECTED(who_regions[ISO_Codes]),",
+              "    FILTER(",
+              "        vaccine_introduction,",
+              "        CONTAINSSTRING(vaccine_introduction[INTRO], \"Yes\")",
+              "    )",
+              ")",
+              ""
+            ],
+            "formatString": "0",
+            "lineageTag": "0d97e7e5-3369-4c6c-8dd3-1f566fcd8079"
+          },
+          {
+            "name": "Global First Introduction Year",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "    MIN(vaccine_introduction[YEAR]),",
+              "    REMOVEFILTERS(who_regions[Country]), // Remove filter on country",
+              "    REMOVEFILTERS(who_regions[WHO_Regions]), // Remove filter on region",
+              "    KEEPFILTERS(",
+              "        CONTAINSSTRING(vaccine_introduction[INTRO], \"Yes\"))",
+              ")"
+            ],
+            "formatString": "0",
+            "lineageTag": "0fd46b89-7a62-4851-93d4-35e55c50ee37"
+          },
+          {
+            "name": "% Change Cases Post-Intro",
+            "expression": [
+              "",
+              "VAR IntroYear = [Introduction Year]",
+              "// Calculate average cases in the 3 years leading up to introduction",
+              "VAR AvgCasesPre =",
+              "    CALCULATE(",
+              "        AVERAGE(reported_cases[CASES]),",
+              "        FILTER(",
+              "            ALL('Year'),",
+              "            'Year'[Years] >= IntroYear - 3 && 'Year'[Years] < IntroYear",
+              "        )",
+              "    )",
+              "// Calculate average cases in the 5 years starting from introduction",
+              "VAR AvgCasesPost =",
+              "    CALCULATE(",
+              "        AVERAGE(reported_cases[CASES]),",
+              "        FILTER(",
+              "            ALL('Year'),",
+              "            'Year'[Years] >= IntroYear && 'Year'[Years] <= IntroYear + 4",
+              "        )",
+              "    )",
+              "VAR PctChange = DIVIDE( (AvgCasesPost - AvgCasesPre), AvgCasesPre )",
+              "RETURN PctChange"
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "be5f692c-1e57-4458-9bb6-312278440320"
+          },
+          {
+            "name": "Median Years to Intro",
+            "expression": [
+              "",
+              "VAR GlobalFirstYear = [Global First Introduction Year]",
+              "RETURN",
+              "MEDIANX(",
+              "    VALUES(vaccine_introduction[ISO_3_CODE]), // Iterate over each country in the current context",
+              "    // For each country, calculate its intro year minus the global first year",
+              "    CALCULATE([Introduction Year]) - GlobalFirstYear",
+              ")"
+            ],
+            "lineageTag": "680d3fc2-5542-4ca6-b3c8-1d176adeb78b",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "Was Introduced Flag",
+            "expression": [
+              "",
+              "// VAR introText = SELECTEDVALUE('vaccine_introduction'[INTRO], \"\")",
+              "// RETURN",
+              "//     IF(",
+              "//         SEARCH(\"Yes\", introText, 1, 0) > 0,",
+              "//         1,",
+              "//         BLANK()",
+              "//     )",
+              "CALCULATE(",
+              "    COUNTROWS(vaccine_introduction),",
+              "    CONTAINSSTRING(vaccine_introduction[INTRO], \"Yes\"))",
+              "",
+              ""
+            ],
+            "formatString": "0",
+            "lineageTag": "7382e9ea-edf6-4179-9ac0-8168aef0e38c"
+          },
+          {
+            "name": "Cases by Relative Year",
+            "expression": [
+              "",
+              "VAR IntroYear = [Introduction Year] // Gets the intro year for the selected country",
+              "VAR CurrentRelativeYear = MAX('Relative Year'[Relative Year]) // Gets the year from the x-axis (-5, -4, etc.)",
+              "VAR TargetActualYear = IntroYear + CurrentRelativeYear // Calculates the actual calendar year to look for",
+              "RETURN",
+              "CALCULATE(",
+              "    SUM(reported_cases[CASES]),",
+              "    FILTER(",
+              "        ALL('Year'), // Ignore the main Year slicer",
+              "        'Year'[Years] = TargetActualYear",
+              "    )",
+              ")"
+            ],
+            "formatString": "0",
+            "lineageTag": "9218cd7b-de8a-4a3d-89e7-77751274e33d"
+          },
+          {
+            "name": "Total Target Population",
+            "expression": "SUM(coverage[TARGET_NUMBER])",
+            "lineageTag": "87722e08-a110-4ac5-8b20-3fcd5a5649b1",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "Total Doses Administered",
+            "expression": [
+              "",
+              "CALCULATE(SUM(coverage[DOSES]))"
+            ],
+            "lineageTag": "cce59528-8092-4b92-a7f5-88a053175bd0",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "Target Population Coverage %",
+            "expression": [
+              "",
+              "DIVIDE(",
+              "    [Total Doses Administered],",
+              "    [Total Target Population],",
+              "    0 // Return 0 if the denominator is blank to avoid errors",
+              ")"
+            ],
+            "formatString": "0.00%;-0.00%;0.00%",
+            "lineageTag": "f59af4d6-4e7a-49da-be3d-aba314315bf5"
+          },
+          {
+            "name": "Doses Needed to Reach Target",
+            "expression": [
+              "",
+              "VAR Needed = [Total Target Population] - [Total Doses Administered]",
+              "// Only show a gap if the target has not been met.",
+              "RETURN",
+              "    IF(Needed > 0, Needed, 0)"
+            ],
+            "lineageTag": "784f4fd0-fe0c-4544-a237-c0cb461e8f26",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "Total Doses Needed",
+            "expression": [
+              "",
+              "VAR Gap = SUM(coverage[TARGET_NUMBER]) - SUM(coverage[DOSES])",
+              "RETURN IF(Gap > 0, Gap, 0)"
+            ],
+            "lineageTag": "26e3a50e-476c-4f40-85ba-ebd6cbd2480a",
+            "annotations": [
+              {
+                "name": "PBI_FormatHint",
+                "value": "{\"isGeneralNumber\":true}"
+              }
+            ]
+          },
+          {
+            "name": "# Vaccines in Schedule",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "        DISTINCTCOUNT(vaccine_schedule[VACCINECODE])",
+              "",
+              "",
+              ")"
+            ],
+            "formatString": "0",
+            "lineageTag": "34aeb28f-1b44-43be-9d98-c1a1ccf782a1"
+          },
+          {
+            "name": "# Vaccines with Coverage",
+            "expression": "DISTINCTCOUNT(coverage[ANTIGEN])",
+            "formatString": "0",
+            "lineageTag": "5549239d-7e7f-4a61-9b88-226c1e540ec5"
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ]
+      },
+      {
+        "name": "structured_antigen_data",
+        "lineageTag": "040ea41f-cc32-4aa9-8682-7f91cbd10da2",
+        "columns": [
+          {
+            "name": "ANTIGEN",
+            "dataType": "string",
+            "sourceColumn": "ANTIGEN",
+            "lineageTag": "c6708075-f221-4b64-8270-d5b35d821bd2",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ANTIGEN_DESCRIPTION",
+            "dataType": "string",
+            "sourceColumn": "ANTIGEN_DESCRIPTION",
+            "lineageTag": "ad646139-a9b3-4da8-bdd1-1e2c80570307",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "ANTIGEN_FAMILY",
+            "dataType": "string",
+            "sourceColumn": "ANTIGEN_FAMILY",
+            "lineageTag": "85a4975f-995d-4be3-b569-8f812f86ac4e",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "BOOSTER_DOSE",
+            "dataType": "string",
+            "sourceColumn": "BOOSTER_DOSE",
+            "lineageTag": "056ab9ad-de21-4f00-a58d-e2e0d67b5945",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TYPE_OF_DOSE",
+            "dataType": "string",
+            "sourceColumn": "TYPE_OF_DOSE",
+            "lineageTag": "476535ab-c003-46f8-87d3-ab1b51a54ad2",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "TARGETED_INDIVIDUAL",
+            "dataType": "string",
+            "sourceColumn": "TARGETED_INDIVIDUAL",
+            "lineageTag": "7ce50432-6fc3-47e9-a490-caf72fee24e4",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Antigen Key",
+            "dataType": "int64",
+            "sourceColumn": "Antigen Key",
+            "formatString": "0",
+            "lineageTag": "0484d2d6-1ed4-4b6b-a5bb-d3496439e284",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "structured_antigen_data",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Excel.Workbook(File.Contents(\"C:\\Users\\shakt\\Documents\\Shared\\Vaccination Power BI report\\New Data\\structured_antigen_data.xlsx\"), null, true),",
+                "    Table1_Table = Source{[Item=\"Table1\",Kind=\"Table\"]}[Data],",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Table1_Table,{{\"ANTIGEN\", type text}, {\"ANTIGEN_DESCRIPTION\", type text}, {\"ANTIGEN_FAMILY\", type text}, {\"BOOSTER_DOSE\", type text}, {\"TYPE_OF_DOSE\", type text}, {\"TARGETED_INDIVIDUAL\", type text}, {\"Antigen Key\", Int64.Type}})",
+                "in",
+                "    #\"Changed Type\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ]
+      },
+      {
+        "name": "Disease Antigen Mappings",
+        "lineageTag": "fe6b05dd-4532-483e-8a20-d68ecbdf541c",
+        "columns": [
+          {
+            "name": "Disease",
+            "dataType": "string",
+            "sourceColumn": "Disease",
+            "lineageTag": "b0db04d2-4412-4883-98c7-dd8b1f15cdc9",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Description",
+            "dataType": "string",
+            "sourceColumn": "Description",
+            "lineageTag": "0f2185a1-c44c-4eeb-bf01-2425e9ce5a42",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          },
+          {
+            "name": "Antigen Key",
+            "dataType": "int64",
+            "sourceColumn": "Antigen Key",
+            "formatString": "0",
+            "lineageTag": "a4576780-5eca-4a47-bd33-a1c5daa63a6c",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Disease Antigen Mappings",
+            "mode": "import",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Excel.Workbook(File.Contents(\"C:\\Users\\shakt\\Documents\\Shared\\Vaccination Power BI report\\New Data\\Disease Antigen Mappings.xlsx\"), null, true),",
+                "    Table1_Table = Source{[Item=\"Table1\",Kind=\"Table\"]}[Data],",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Table1_Table,{{\"Disease\", type text}, {\"Description\", type text}, {\"Antigen Key\", Int64.Type}})",
+                "in",
+                "    #\"Changed Type\""
+              ]
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_NavigationStepName",
+            "value": "Navigation"
+          },
+          {
+            "name": "PBI_ResultType",
+            "value": "Table"
+          }
+        ]
+      },
+      {
+        "name": "Antigen Key Bridge",
+        "isHidden": true,
+        "lineageTag": "2f8bebce-97cc-4295-a86d-0fbefdb7b0fb",
+        "columns": [
+          {
+            "type": "calculatedTableColumn",
+            "name": "Antigen Key",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "isHidden": true,
+            "sourceColumn": "Disease Antigen Mappings[Antigen Key]",
+            "formatString": "0",
+            "lineageTag": "ac9bd0a9-2278-475b-9a70-5c750ac295a4",
+            "summarizeBy": "none",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Antigen Key Bridge",
+            "mode": "import",
+            "source": {
+              "type": "calculated",
+              "expression": "SUMMARIZECOLUMNS( 'Disease Antigen Mappings'[Antigen Key])"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_Id",
+            "value": "238f93e4e12c49408ec0a375afc22b98"
+          }
+        ]
+      },
+      {
+        "name": "Relative Year",
+        "lineageTag": "b1b50f56-10cc-405d-ab11-7224f71a67a0",
+        "columns": [
+          {
+            "type": "calculatedTableColumn",
+            "name": "Relative Year",
+            "dataType": "int64",
+            "isNameInferred": false,
+            "isDataTypeInferred": true,
+            "sourceColumn": "[Value]",
+            "formatString": "0",
+            "lineageTag": "3cf9d422-1538-443f-99f2-dc1193997d2b",
+            "summarizeBy": "sum",
+            "annotations": [
+              {
+                "name": "SummarizationSetBy",
+                "value": "Automatic"
+              }
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Relative Year",
+            "mode": "import",
+            "source": {
+              "type": "calculated",
+              "expression": "GENERATESERIES(-5, 10, 1)"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "name": "PBI_Id",
+            "value": "876c2f80f8844524a9411ec2e1c31e0f"
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "03f626f8-04cd-e64e-1d73-af81db668b4b",
+        "fromTable": "coverage",
+        "fromColumn": "CODE",
+        "toTable": "who_regions",
+        "toColumn": "ISO_Codes",
+        "crossFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "704d028e-bbc3-baa8-7ec0-d910529a6b02",
+        "fromTable": "incidence_rate",
+        "fromColumn": "CODE",
+        "toTable": "who_regions",
+        "toColumn": "ISO_Codes"
+      },
+      {
+        "name": "a892ffc7-dc4d-e097-e725-edacbf70352a",
+        "fromTable": "other_indicators",
+        "fromColumn": "ISO_3_CODE",
+        "toTable": "who_regions",
+        "toColumn": "ISO_Codes"
+      },
+      {
+        "name": "c27af394-1d71-e31e-d6e5-059a6ffb326d",
+        "fromTable": "reported_cases",
+        "fromColumn": "CODE",
+        "toTable": "who_regions",
+        "toColumn": "ISO_Codes"
+      },
+      {
+        "name": "b335f0c3-7b2f-8617-938e-0ec2f0eaaa52",
+        "fromTable": "vaccine_introduction",
+        "fromColumn": "ISO_3_CODE",
+        "toTable": "who_regions",
+        "toColumn": "ISO_Codes"
+      },
+      {
+        "name": "b4119f17-5023-efbe-150e-6563d6fbbb55",
+        "fromTable": "vaccine_schedule",
+        "fromColumn": "ISO_3_CODE",
+        "toTable": "who_regions",
+        "toColumn": "ISO_Codes"
+      },
+      {
+        "name": "b992b798-3558-8a94-3846-95599f55ab16",
+        "fromTable": "coverage",
+        "fromColumn": "YEAR",
+        "toTable": "Year",
+        "toColumn": "Years"
+      },
+      {
+        "name": "96c955e5-26bc-1264-fe6c-5a711b7b991c",
+        "fromTable": "incidence_rate",
+        "fromColumn": "YEAR",
+        "toTable": "Year",
+        "toColumn": "Years"
+      },
+      {
+        "name": "c47f06ec-58c0-2ab7-425b-a9e4755d74eb",
+        "fromTable": "other_indicators",
+        "fromColumn": "YEAR",
+        "toTable": "Year",
+        "toColumn": "Years"
+      },
+      {
+        "name": "3c6b7f5b-19cc-77c7-ce2d-0c9c0acc001b",
+        "fromTable": "reported_cases",
+        "fromColumn": "YEAR",
+        "toTable": "Year",
+        "toColumn": "Years"
+      },
+      {
+        "name": "5ecddbe3-1d17-dc9f-1e4b-7ff88417a1f0",
+        "fromTable": "vaccine_introduction",
+        "fromColumn": "YEAR",
+        "toTable": "Year",
+        "toColumn": "Years"
+      },
+      {
+        "name": "df1bc765-fdf0-fce4-8225-f533588ff5e4",
+        "fromTable": "vaccine_schedule",
+        "fromColumn": "YEAR",
+        "toTable": "Year",
+        "toColumn": "Years"
+      },
+      {
+        "name": "AutoDetected_ffe7cd94-ad3a-463d-835d-dfaac4f48ae1",
+        "fromTable": "coverage",
+        "fromColumn": "ANTIGEN",
+        "toTable": "structured_antigen_data",
+        "toColumn": "ANTIGEN"
+      },
+      {
+        "name": "AutoDetected_bf5fd9e5-7f83-4e2a-aab1-9e3df695c143",
+        "fromTable": "incidence_rate",
+        "fromColumn": "DISEASE",
+        "toTable": "Disease Antigen Mappings",
+        "toColumn": "Disease",
+        "crossFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "AutoDetected_2ac47da3-0cbb-4973-b574-031f2f91e754",
+        "fromTable": "reported_cases",
+        "fromColumn": "DISEASE",
+        "toTable": "Disease Antigen Mappings",
+        "toColumn": "Disease"
+      },
+      {
+        "name": "0f91c172-ea10-65b8-9178-9d638c814f66",
+        "fromTable": "Disease Antigen Mappings",
+        "fromColumn": "Antigen Key",
+        "toTable": "Antigen Key Bridge",
+        "toColumn": "Antigen Key",
+        "crossFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "40bf6325-75e3-497a-589c-445b61461cee",
+        "fromTable": "structured_antigen_data",
+        "fromColumn": "Antigen Key",
+        "toTable": "Antigen Key Bridge",
+        "toColumn": "Antigen Key"
+      }
+    ],
+    "cultures": [
+      {
+        "name": "en-US",
+        "linguisticMetadata": {
+          "content": {
+            "Version": "1.0.0",
+            "Language": "en-US"
+          },
+          "contentType": "json"
+        }
+      }
+    ],
+    "annotations": [
+      {
+        "name": "PBI_QueryOrder",
+        "value": "[\"coverage\",\"incidence_rate\",\"other_indicators\",\"reported_cases\",\"vaccine_introduction\",\"vaccine_schedule\",\"who_regions\",\"Key Measures\",\"structured_antigen_data\",\"Disease Antigen Mappings\"]"
+      },
+      {
+        "name": "__PBI_TimeIntelligenceEnabled",
+        "value": "1"
+      },
+      {
+        "name": "PBIDesktopVersion",
+        "value": "2.146.1454.0 (25.08)+901d6c338d1dea81ac3e53073ffb10469f0f37b8"
+      },
+      {
+        "name": "PBI_ProTooling",
+        "value": "[\"DaxQueryView_Desktop\"]"
+      },
+      {
+        "name": "TabularEditor_SerializeOptions",
+        "value": "{\"IgnoreInferredObjects\":true,\"IgnoreInferredProperties\":true,\"IgnoreTimestamps\":true,\"SplitMultilineStrings\":true,\"PrefixFilenames\":false,\"LocalTranslations\":false,\"LocalPerspectives\":false,\"LocalRelationships\":false,\"Levels\":[\"Data Sources\",\"Shared Expressions\",\"Perspectives\",\"Relationships\",\"Roles\",\"Tables\",\"Tables/Columns\",\"Tables/Hierarchies\",\"Tables/Measures\",\"Tables/Partitions\",\"Tables/Calculation Items\",\"Translations\"]}"
+      },
+      {
+        "name": "__TEdtr",
+        "value": "1"
+      }
+    ]
+  }
+}
